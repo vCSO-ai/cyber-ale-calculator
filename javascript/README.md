@@ -1,0 +1,259 @@
+# cyber-ale-calculator
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![Node.js 18+](https://img.shields.io/badge/node-18%2B-green.svg)](https://nodejs.org/)
+
+Calculate Annual Loss Expectancy (ALE), Single Loss Expectancy (SLE), and risk reduction ROI for cybersecurity investments using standard FAIR methodology.
+
+## Install
+
+**Python:**
+
+```bash
+pip install cyber-ale-calculator
+```
+
+**JavaScript:**
+
+```bash
+npm install cyber-ale-calculator
+```
+
+## Quick Start
+
+**Python:**
+
+```python
+from cyber_ale_calculator import calculate_ale, calculate_risk_reduction, risk_rating
+
+# A $2M database server with 40% exposure to ransomware, hitting ~0.75x/year
+ale = calculate_ale(asset_value=2_000_000, exposure_factor=0.4, aro=0.75)
+print(f"Annual Loss Expectancy: ${ale:,.0f}")  # $600,000
+
+# Evaluate an EDR tool that reduces ALE from $600K to $90K at $120K/year
+result = calculate_risk_reduction(ale_before=600_000, ale_after=90_000, control_cost=120_000)
+print(f"Net benefit: ${result['net_benefit']:,.0f}")   # $390,000
+print(f"ROI: {result['roi_percent']:.0f}%")            # 325%
+print(f"Payback: {result['payback_months']:.1f} months") # 2.8 months
+
+print(f"Risk tier: {risk_rating(ale)}")  # medium
+```
+
+**JavaScript:**
+
+```javascript
+const { calculateAle, calculateRiskReduction, riskRating } = require("cyber-ale-calculator");
+
+// A $2M database server with 40% exposure to ransomware, hitting ~0.75x/year
+const ale = calculateAle(2_000_000, 0.4, 0.75);
+console.log(`Annual Loss Expectancy: $${ale.toLocaleString()}`); // $600,000
+
+// Evaluate an EDR tool that reduces ALE from $600K to $90K at $120K/year
+const result = calculateRiskReduction(600_000, 90_000, 120_000);
+console.log(`Net benefit: $${result.netBenefit.toLocaleString()}`);    // $390,000
+console.log(`ROI: ${result.roiPercent.toFixed(0)}%`);                  // 325%
+console.log(`Payback: ${result.paybackMonths.toFixed(1)} months`);     // 2.8 months
+
+console.log(`Risk tier: ${riskRating(ale)}`); // medium
+```
+
+## API Reference
+
+### `calculate_ale(asset_value, exposure_factor, aro)` / `calculateAle(assetValue, exposureFactor, aro)`
+
+Calculate Annual Loss Expectancy.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `asset_value` | `float` | Total value of the asset at risk (USD) |
+| `exposure_factor` | `float` | Fraction of asset value lost per incident (0.0 -- 1.0) |
+| `aro` | `float` | Annual Rate of Occurrence |
+
+**Returns:** `float` -- ALE = (asset_value x exposure_factor) x aro
+
+```python
+# Python
+calculate_ale(5_000_000, 0.3, 0.5)  # 750_000.0
+```
+
+```javascript
+// JavaScript
+calculateAle(5_000_000, 0.3, 0.5);  // 750000
+```
+
+---
+
+### `calculate_sle(asset_value, exposure_factor)` / `calculateSle(assetValue, exposureFactor)`
+
+Calculate Single Loss Expectancy -- the expected dollar loss from a single incident.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `asset_value` | `float` | Total value of the asset at risk (USD) |
+| `exposure_factor` | `float` | Fraction of asset value lost per incident (0.0 -- 1.0) |
+
+**Returns:** `float` -- SLE = asset_value x exposure_factor
+
+```python
+# Python
+calculate_sle(1_000_000, 0.5)  # 500_000.0
+```
+
+```javascript
+// JavaScript
+calculateSle(1_000_000, 0.5);  // 500000
+```
+
+---
+
+### `calculate_aro(incidents_over_period, period_years)` / `calculateAro(incidentsOverPeriod, periodYears)`
+
+Calculate Annual Rate of Occurrence from historical incident data.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `incidents_over_period` | `float` | Number of incidents observed |
+| `period_years` | `float` | Length of observation period in years (must be > 0) |
+
+**Returns:** `float` -- ARO = incidents / years
+
+```python
+# Python: 3 phishing incidents over 2 years
+calculate_aro(3, 2)  # 1.5
+```
+
+```javascript
+// JavaScript: 3 phishing incidents over 2 years
+calculateAro(3, 2);  // 1.5
+```
+
+---
+
+### `calculate_risk_reduction(ale_before, ale_after, control_cost)` / `calculateRiskReduction(aleBefore, aleAfter, controlCost)`
+
+Evaluate the financial return of a security control by comparing ALE before and after implementation against the cost of the control.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `ale_before` | `float` | ALE before implementing the control |
+| `ale_after` | `float` | ALE after implementing the control |
+| `control_cost` | `float` | Annual cost of the control (USD) |
+
+**Returns:** Object with three fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `net_benefit` | `float` | Annual savings minus control cost |
+| `roi_percent` | `float` | (net_benefit / control_cost) x 100 |
+| `payback_months` | `float` | Months to recoup the control cost from risk reduction |
+
+```python
+# Python
+result = calculate_risk_reduction(500_000, 100_000, 50_000)
+# {'net_benefit': 350000, 'roi_percent': 700.0, 'payback_months': 1.5}
+```
+
+```javascript
+// JavaScript
+const result = calculateRiskReduction(500_000, 100_000, 50_000);
+// { netBenefit: 350000, roiPercent: 700, paybackMonths: 1.5 }
+```
+
+---
+
+### `risk_rating(ale)` / `riskRating(ale)`
+
+Classify an ALE value into a qualitative risk tier.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `ale` | `float` | Annual Loss Expectancy (USD) |
+
+**Returns:** `string` -- one of `'critical'`, `'high'`, `'medium'`, `'low'`, `'negligible'`
+
+| Threshold | Rating |
+|-----------|--------|
+| >= $10,000,000 | `critical` |
+| >= $1,000,000 | `high` |
+| >= $100,000 | `medium` |
+| >= $10,000 | `low` |
+| < $10,000 | `negligible` |
+
+```python
+# Python
+risk_rating(5_500_000)  # 'high'
+risk_rating(42_000)     # 'low'
+```
+
+```javascript
+// JavaScript
+riskRating(5_500_000);  // 'high'
+riskRating(42_000);     // 'low'
+```
+
+## Threat Scenario Reference
+
+The library includes a lookup table of common threat scenarios with typical Annual Rate of Occurrence ranges. Access it via `THREAT_SCENARIOS` (Python) or `THREAT_SCENARIOS` (JavaScript).
+
+| Scenario | ARO Low | ARO Mid | ARO High | Typical EF | Description |
+|----------|---------|---------|----------|------------|-------------|
+| **Ransomware** | 0.25 | 0.75 | 2.0 | 60% | Encryption of critical systems with ransom demand; includes recovery costs, downtime, and potential data loss |
+| **Phishing / BEC** | 1.0 | 5.0 | 20.0 | 15% | Credential theft or fraudulent wire transfers initiated via deceptive email |
+| **Insider Threat** | 0.1 | 0.5 | 2.0 | 35% | Data exfiltration, sabotage, or accidental exposure by employees or contractors |
+| **DDoS** | 0.5 | 3.0 | 12.0 | 10% | Service disruption from volumetric or application-layer flooding |
+| **Data Breach** | 0.05 | 0.2 | 1.0 | 50% | Unauthorized access to sensitive data (PII, PHI, financial records) with regulatory and reputational impact |
+
+**Using the lookup table:**
+
+```python
+# Python
+from cyber_ale_calculator import THREAT_SCENARIOS, calculate_ale
+
+ransomware = THREAT_SCENARIOS["ransomware"]
+ale = calculate_ale(
+    asset_value=3_000_000,
+    exposure_factor=ransomware["typical_exposure_factor"],
+    aro=ransomware["aro_mid"],
+)
+print(f"Ransomware ALE (mid estimate): ${ale:,.0f}")  # $1,350,000
+```
+
+```javascript
+// JavaScript
+const { THREAT_SCENARIOS, calculateAle } = require("cyber-ale-calculator");
+
+const ransomware = THREAT_SCENARIOS.ransomware;
+const ale = calculateAle(3_000_000, ransomware.typicalExposureFactor, ransomware.aroMid);
+console.log(`Ransomware ALE (mid estimate): $${ale.toLocaleString()}`); // $1,350,000
+```
+
+## Methodology
+
+This library implements the quantitative risk analysis formulas defined by the **FAIR (Factor Analysis of Information Risk)** framework, the international standard for cyber risk quantification (OpenFAIR, Open Group Standard C13G).
+
+The core formula chain:
+
+```
+SLE  =  Asset Value  x  Exposure Factor
+ARO  =  Incidents    /  Period (years)
+ALE  =  SLE          x  ARO
+```
+
+- **Asset Value** -- the total replacement/recovery cost of the asset, including downtime, regulatory fines, reputational damage, and remediation labor.
+- **Exposure Factor (EF)** -- the percentage of the asset value that would be lost in a single incident. A ransomware attack that destroys 60% of operational capacity has an EF of 0.6.
+- **Annual Rate of Occurrence (ARO)** -- how many times per year the threat event is expected to occur, derived from historical data, threat intelligence, or industry benchmarks.
+- **Single Loss Expectancy (SLE)** -- the dollar impact of one incident.
+- **Annual Loss Expectancy (ALE)** -- the expected annual cost of the risk, used to justify control investments.
+
+The `calculate_risk_reduction` function extends this into ROI analysis: if a security control reduces ALE by more than its annual cost, the control has a positive return on investment.
+
+## Further Reading
+
+- For an interactive ALE calculator with visual breakdowns, see the [Annual Loss Expectancy Calculator](https://vcso.ai/learn/annual-loss-expectancy-calculator/) on vCSO.ai.
+- To understand how ALE fits into broader risk quantification frameworks, read [What Is Cyber Risk Quantification](https://vcso.ai/learn/what-is-cyber-risk-quantification/).
+- For guidance on translating ALE into board-level ROI arguments, see [How to Measure Cybersecurity ROI](https://vcso.ai/learn/how-to-measure-cybersecurity-roi/).
+
+## License
+
+MIT -- see [LICENSE](LICENSE) for details.
